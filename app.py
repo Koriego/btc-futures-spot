@@ -41,14 +41,34 @@ st.sidebar.write(f"📉 Volatilidad anual estimada (sigma): {sigma:.4f}")
 @st.cache_data(ttl=60)
 def get_spot_price():
     url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-    data = requests.get(url).json()
-    return float(data['price'])
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        st.write("DEBUG spot price data:", data)  # Para debug en la app
+        price = float(data.get('price', 0))
+        if price == 0:
+            st.error("No se encontró el precio en la respuesta de la API Spot.")
+        return price
+    except Exception as e:
+        st.error(f"Error al obtener precio spot: {e}")
+        return 0
 
 @st.cache_data(ttl=60)
 def get_future_price():
     url = "https://fapi.binance.com/fapi/v1/ticker/price?symbol=BTCUSDT"
-    data = requests.get(url).json()
-    return float(data['price'])
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        st.write("DEBUG future price data:", data)  # Para debug en la app
+        price = float(data.get('price', 0))
+        if price == 0:
+            st.error("No se encontró el precio en la respuesta de la API Futuro.")
+        return price
+    except Exception as e:
+        st.error(f"Error al obtener precio futuro: {e}")
+        return 0
 
 spot_price = get_spot_price()
 future_price = get_future_price()
@@ -63,7 +83,7 @@ theoretical_future = spot_price * math.exp(r * T)
 st.write(f"Precio futuro teórico (modelo): **${theoretical_future:,.2f}**")
 
 diff = future_price - theoretical_future
-diff_pct = (diff / theoretical_future) * 100
+diff_pct = (diff / theoretical_future) * 100 if theoretical_future != 0 else 0
 st.write(f"Diferencia: ${diff:,.2f} ({diff_pct:.2f}%)")
 
 if diff_pct > alert_threshold_pct:
@@ -168,4 +188,3 @@ def send_email_alert(subject, message):
         st.success("✅ Alerta enviada por email!")
     except Exception as e:
         st.error(f"❌ Error enviando email: {e}")
-
