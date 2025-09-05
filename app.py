@@ -38,14 +38,18 @@ st.sidebar.write(f"📉 Volatilidad anual estimada (sigma): {sigma:.4f}")
 
 # Obtener precios spot y futuro (Binance ejemplo)
 
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36"
+}
+
 @st.cache_data(ttl=60)
 def get_spot_price():
     url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
         data = response.json()
-        st.write("DEBUG spot price data:", data)  # Para debug en la app
+        st.write("DEBUG spot price data:", data)
         price = float(data.get('price', 0))
         if price == 0:
             st.error("No se encontró el precio en la respuesta de la API Spot.")
@@ -58,10 +62,10 @@ def get_spot_price():
 def get_future_price():
     url = "https://fapi.binance.com/fapi/v1/ticker/price?symbol=BTCUSDT"
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
         data = response.json()
-        st.write("DEBUG future price data:", data)  # Para debug en la app
+        st.write("DEBUG future price data:", data)
         price = float(data.get('price', 0))
         if price == 0:
             st.error("No se encontró el precio en la respuesta de la API Futuro.")
@@ -69,6 +73,7 @@ def get_future_price():
     except Exception as e:
         st.error(f"Error al obtener precio futuro: {e}")
         return 0
+
 
 spot_price = get_spot_price()
 future_price = get_future_price()
@@ -188,3 +193,4 @@ def send_email_alert(subject, message):
         st.success("✅ Alerta enviada por email!")
     except Exception as e:
         st.error(f"❌ Error enviando email: {e}")
+
